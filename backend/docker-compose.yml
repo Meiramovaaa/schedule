@@ -1,0 +1,68 @@
+version: "3.7"
+services:
+  postgres:
+    container_name: postgres
+    image: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: db
+    volumes: 
+      - pg_data:/var/lib/postgresql/data
+    tty: true
+  backend:
+    container_name: backend
+    build: 
+      context: .
+    env_file:
+      .env
+    depends_on:
+      - postgres
+    volumes:
+      - .:/backend/
+      - /backend/node_modules
+    environment:
+      PGHOST: postgres
+      PGUSER: postgres
+      PGPASSWORD: pass
+      PGDB: db
+      # NODE_ENV: development
+      PORT: 3003
+    ports:
+      - "3003:3003"
+      - 127.0.0.1:9223:9223
+    command: npm run start
+  migration: 
+    build: 
+      context: ./
+    command: 
+      [
+        "./wait-for-it/wait-for-it.sh",
+        "postgres:5432",
+        "--", 
+        "npm",
+        "run",
+        "migrate",
+      ] 
+    links: 
+      - postgres
+    depends_on: 
+      - postgres
+    # env_file: 
+    #   .env
+    environment: 
+      PGUSER: postgres
+      PGPASSWORD: pass
+      PGDB: db
+      PGHOST: postgres
+volumes:
+  database:
+  pg_data: null
+      
+      
+    
+
+  
